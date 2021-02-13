@@ -9,8 +9,36 @@ Description: >
 Globals:
   Function:
     Timeout: 3
+    MemorySize: 1024
+    Runtime: python3.8
+    CodeUri: demoapp/
 
 Resources:
+  IngestFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Description: ingestTable
+      Events:
+        IngestEvent:
+          Type: Api
+          Properties:
+            Path: /ingest
+            Method: post
+      Handler: app.ingest
+      Layers: 
+        - arn:aws:lambda:ap-southeast-1:394922924679:layer:pynamodb-layer:22
+      Policies: 
+        - DynamoDBCrudPolicy:
+            TableName: !Ref LogTable
+        - S3ReadPolicy:
+            BucketName: !Ref IngestBucket
+      
+  IngestBucket:
+    Type: AWS::S3::Bucket
+    Properties: 
+      AccelerateConfiguration:
+        AccelerationStatus: Enabled
+  
   LogTable:
     Type: AWS::Serverless::SimpleTable
     Properties:
@@ -22,3 +50,8 @@ Outputs:
   LogTable:
     Description: "log table name"
     Value: !Ref LogTable
+  S3BucketName:
+    Value: !Ref IngestBucket
+  FunctionName:
+    Value: !Ref IngestFunction
+  
